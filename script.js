@@ -1,168 +1,237 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Navigation
-    const navItems = document.querySelectorAll('.nav-item');
-    const pages = document.querySelectorAll('.page');
+let currentSlide = 1;
+const totalSlides = 7;
+let isMusicPlaying = false;
+let confettiInterval;
+let heartInterval;
+let musicAttempted = false;
+
+// Initialize when document is loaded
+document.addEventListener("DOMContentLoaded", function() {
+    updateProgressBar();
+    createBubbles();
+    createHearts();
     
-    navItems.forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Remove active class from all nav items
-            navItems.forEach(navItem => navItem.classList.remove('active'));
-            
-            // Add active class to clicked item
-            this.classList.add('active');
-            
-            // Hide all pages
-            pages.forEach(page => page.classList.remove('active'));
-            
-            // Show corresponding page
-            const pageId = this.getAttribute('data-page');
-            document.getElementById(pageId).classList.add('active');
-            
-            // Create a burst of hearts
-            for (let i = 0; i < 10; i++) {
-                setTimeout(createHeart, i * 50);
-            }
-        });
+    // Add animation to final heart
+    setTimeout(() => {
+        document.getElementById('final-heart').classList.add('active');
+    }, 500);
+    
+    // Initialize music player with proper event listeners
+    const musicBtn = document.querySelector('.music-player');
+    const musicIcon = document.getElementById('music-icon');
+    const bgMusic = document.getElementById('bgMusic');
+    
+    // Add message for user to know they can click for music
+    musicIcon.classList.add('fa-music');
+    musicBtn.title = "Klik untuk memainkan musik";
+    
+    // Listen for user interaction to enable music
+    musicBtn.addEventListener('click', function() {
+        toggleMusic();
     });
     
-    // Floating hearts animation
-    function createHeart() {
+    // Add error event listener
+    bgMusic.addEventListener('error', function(e) {
+        console.error('Audio error:', e);
+        alert('Musik tidak dapat dimainkan. File mungkin tidak ditemukan atau format tidak didukung.');
+        musicIcon.classList.remove('fa-volume-up');
+        musicIcon.classList.add('fa-music-slash');
+    });
+});
+
+// Create floating hearts
+function createHearts() {
+    heartInterval = setInterval(() => {
         const heart = document.createElement('div');
-        heart.classList.add('heart');
+        heart.className = Math.random() > 0.7 ? 'heart' : 'heart mini';
         
-        // Random position
         heart.style.left = Math.random() * 100 + 'vw';
         heart.style.top = Math.random() * 100 + 'vh';
+        heart.style.opacity = Math.random() * 0.5 + 0.3;
+        heart.style.animation = `float ${Math.random() * 5 + 3}s linear forwards`;
         
-        // Random size
-        const size = Math.random() * 20 + 10;
-        heart.style.width = size + 'px';
-        heart.style.height = size + 'px';
+        document.body.appendChild(heart);
         
-        // Animation
-        heart.style.animation = `floatUp ${Math.random() * 5 + 3}s linear`;
-        
-        document.querySelector('.hearts-container').appendChild(heart);
-        
-        // Remove heart after animation completes
         setTimeout(() => {
             heart.remove();
         }, 8000);
+    }, 300);
+}
+
+// Create bubbles
+function createBubbles() {
+    const bubblesContainer = document.getElementById('bubbles-container');
+    
+    for (let i = 0; i < 20; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        
+        const size = Math.random() * 60 + 20;
+        bubble.style.width = `${size}px`;
+        bubble.style.height = `${size}px`;
+        bubble.style.left = `${Math.random() * 100}%`;
+        bubble.style.opacity = Math.random() * 0.3 + 0.1;
+        bubble.style.animationDuration = `${Math.random() * 10 + 10}s`;
+        bubble.style.animationDelay = `${Math.random() * 5}s`;
+        
+        bubblesContainer.appendChild(bubble);
     }
-    
-    // Create hearts periodically
-    setInterval(createHeart, 300);
-    
-    // Show photos with animation
-    const photos = document.querySelectorAll('.photo');
-    function checkPhotos() {
-        photos.forEach((photo, index) => {
-            const photoPosition = photo.getBoundingClientRect().top;
-            const screenPosition = window.innerHeight / 1.3;
-            
-            if (photoPosition < screenPosition) {
-                setTimeout(() => {
-                    photo.style.opacity = '1';
-                    photo.style.transform = 'translateY(0)';
-                }, 100 * index);
-            }
+}
+
+// Function to navigate to next slide
+function nextSlide() {
+    changeSlide(currentSlide + 1);
+}
+
+// Go to specific slide
+function goToSlide(slideNumber) {
+    changeSlide(slideNumber);
+}
+
+// Change slide with animations
+function changeSlide(newSlide) {
+    if (newSlide <= totalSlides && newSlide >= 1) {
+        document.getElementById(`slide${currentSlide}`).classList.remove('active');
+        currentSlide = newSlide;
+        
+        // Update active nav dot
+        document.querySelectorAll('.nav-dot').forEach((dot, index) => {
+            dot.classList.toggle('active', index + 1 === currentSlide);
         });
+        
+        document.getElementById(`slide${currentSlide}`).classList.add('active');
+        updateProgressBar();
+        
+        // Special actions for specific slides
+        if (currentSlide === 4) {
+            document.getElementById('final-heart').classList.add('active');
+        }
     }
+}
+
+// Update progress bar
+function updateProgressBar() {
+    const progress = ((currentSlide - 1) / 4) * 100;
+    document.getElementById('progress-bar').style.width = `${progress}%`;
+}
+
+// Move the No button away from cursor
+function moveNoButton() {
+    const noBtn = document.getElementById('noBtn');
+    const x = Math.random() * (window.innerWidth - 200);
+    const y = Math.random() * (window.innerHeight - 100);
     
-    // Timeline animation
-    const timelineItems = document.querySelectorAll('.timeline-item');
-    function checkTimeline() {
-        timelineItems.forEach(item => {
-            const itemPosition = item.getBoundingClientRect().top;
-            const screenPosition = window.innerHeight / 1.3;
-            
-            if (itemPosition < screenPosition) {
-                item.classList.add('visible');
-            }
-        });
-    }
+    noBtn.style.position = 'absolute';
+    noBtn.style.left = `${x}px`;
+    noBtn.style.top = `${y}px`;
+    noBtn.classList.add('animate__animated', 'animate__headShake');
     
-    // Special message button
-    const messageBtn = document.getElementById('showMessage');
-    const specialMessage = document.getElementById('specialMessage');
+    setTimeout(() => {
+        noBtn.classList.remove('animate__animated', 'animate__headShake');
+    }, 500);
+}
+
+// Yes button clicked
+function yesClicked() {
+    document.getElementById('slide5').classList.remove('active');
+    document.getElementById('slide6').classList.add('active');
+    createConfetti();
+}
+
+// No button clicked
+function noClicked() {
+    document.getElementById('slide5').classList.remove('active');
+    document.getElementById('slide7').classList.add('active');
+}
+
+// Create confetti animation
+function createConfetti() {
+    const confettiContainer = document.getElementById('confetti-container');
+    const colors = ['#ff5c8d', '#ffc2d1', '#ff85a2', '#ff3366', '#ffffff'];
     
-    messageBtn.addEventListener('click', function() {
-        specialMessage.style.display = 'block';
+    confettiInterval = setInterval(() => {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        
+        const size = Math.random() * 10 + 5;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        confetti.style.width = `${size}px`;
+        confetti.style.height = `${size}px`;
+        confetti.style.backgroundColor = color;
+        confetti.style.left = `${Math.random() * 100}%`;
+        confetti.style.top = '-20px';
+        confetti.style.opacity = '1';
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+        
+        const animationDuration = Math.random() * 3 + 2;
+        confetti.style.animation = `float ${animationDuration}s linear forwards`;
+        
+        confettiContainer.appendChild(confetti);
+        
         setTimeout(() => {
-            specialMessage.style.opacity = '1';
-            specialMessage.style.transform = 'scale(1)';
-        }, 10);
+            confetti.remove();
+        }, animationDuration * 1000);
+    }, 100);
+}
+
+// Improved Toggle background music
+function toggleMusic() {
+    const music = document.getElementById('bgMusic');
+    const musicIcon = document.getElementById('music-icon');
+    
+    if (isMusicPlaying) {
+        // If music is playing, pause it
+        music.pause();
+        musicIcon.classList.remove('fa-volume-up');
+        musicIcon.classList.add('fa-music');
+        isMusicPlaying = false;
+    } else {
+        // If music is not playing, try to play it
+        const playPromise = music.play();
         
-        // Create a burst of hearts
-        for (let i = 0; i < 20; i++) {
-            setTimeout(createHeart, i * 50);
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                // Autoplay started successfully
+                musicIcon.classList.remove('fa-music');
+                musicIcon.classList.add('fa-volume-up');
+                isMusicPlaying = true;
+            }).catch(error => {
+                // Autoplay was prevented
+                console.error("Music autoplay prevented:", error);
+                
+                if (!musicAttempted) {
+                    // First attempt, show message to user
+                    alert("Harap klik tombol musik lagi untuk memainkan musik. Browser mungkin memerlukan interaksi pengguna.");
+                    musicAttempted = true;
+                }
+                
+                isMusicPlaying = false;
+            });
         }
-        
-        messageBtn.textContent = 'Pesan Telah Dibuka ❤️';
-        messageBtn.disabled = true;
-    });
-    
-    // Gift box animation
-    const giftBox = document.querySelector('.gift-box');
-    giftBox.addEventListener('click', function() {
-        this.classList.toggle('open');
-        
-        // Create a burst of hearts
-        for (let i = 0; i < 20; i++) {
-            setTimeout(createHeart, i * 50);
-        }
-    });
-    
-    // Countdown timer - Fixed code
-    function updateCountdown() {
-        // Set the date we're counting down to (next Valentine's Day or anniversary)
-        const countdownDate = new Date("Feb 14, 2026 00:00:00").getTime();
-        const now = new Date().getTime();
-        const distance = countdownDate - now;
-        
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        
-        document.getElementById("days").innerText = days.toString().padStart(2, '0');
-        document.getElementById("hours").innerText = hours.toString().padStart(2, '0');
-        document.getElementById("minutes").innerText = minutes.toString().padStart(2, '0');
-        document.getElementById("seconds").innerText = seconds.toString().padStart(2, '0');
     }
+}
+
+// Redirect to WhatsApp
+function redirectToWhatsApp(isYes) {
+    // You can customize the message based on the response
+    const message = isYes 
+        ? 'Halo! Aku senang bisa lebih dekat denganmu ❤️'
+        : 'Halo! Terima kasih sudah tetap mau berteman denganku 😊';
     
-    // Fix for the message form - Check if exists first
-    const messageForm = document.querySelector('.message-form');
-    if (messageForm) {
-        messageForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Show success message
-            const formElements = this.elements;
-            for (let i = 0; i < formElements.length; i++) {
-                formElements[i].disabled = true;
-            }
-            
-            this.innerHTML = '<div class="love-quote">Pesan cintamu telah terkirim! ❤️</div>';
-            
-            // Create a burst of hearts
-            for (let i = 0; i < 20; i++) {
-                setTimeout(createHeart, i * 50);
-            }
-        });
+    // Replace the phone number with your actual number
+    const phoneNumber = '6288289907355'; // Format: country code without + and then number
+    
+    const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappURL, '_blank'); 
+}
+
+// Handle keyboard navigation
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'ArrowRight' || event.key === ' ') {
+        nextSlide();
+    } else if (event.key === 'ArrowLeft') {
+        goToSlide(currentSlide - 1);
     }
-    
-    // Event listeners for scroll animations
-    window.addEventListener('scroll', checkPhotos);
-    window.addEventListener('scroll', checkTimeline);
-    
-    // Initialize - Make sure these run properly
-    checkPhotos();
-    checkTimeline();
-    updateCountdown();
-    
-    // Run the countdown every second
-    setInterval(updateCountdown, 1000);
 });
